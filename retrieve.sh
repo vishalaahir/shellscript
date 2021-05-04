@@ -72,6 +72,41 @@ function check_bucket_existance () {
 }
 
 #######################################
+# Check the existance of S3 bucket path
+# Globals:
+#   bucketName
+#   bucketPath
+# Arguments:
+#   None
+# Outputs:
+#   Existance of S3 bucket path
+#######################################
+function check_bucket_path_existance () {
+    local IFS='/ '
+    listOfBucketPath=$(aws s3 ls s3://${BUCKETNAME}/${BUCKETPATH} | awk '{print $2}' |tr '\n' ' ')
+    read -a listOfBucketPath <<< ${listOfBucketPath}
+    numberOfBucketpath=${#listOfBucketPath[@]}
+    if [ $numberOfBucketpath != 0 ]
+    then
+        i=0
+        while [ $i -lt $numberOfBucketpath ]; do
+        if [ $BUCKETPATH = ${listOfBucketPath[$i]} ] 
+        then
+            echo "bucketpath is exist"
+            break
+        else
+            echo "bucketpath is not exist in bucket"
+            exit 1
+        fi
+        ((i++))
+    done
+    else
+        echo "bucketpath is not exist in bucket"
+        exit 1
+    fi
+}
+
+#######################################
 # Get the bucket name from user
 # Globals:
 #   bucketName
@@ -86,11 +121,22 @@ function get_bucket_name () {
         read BUCKETNAME
     done
     check_bucket_existance
+}
+
+#######################################
+# Get the bucket path from user
+# Globals:
+#   bucketPath
+# Arguments:
+#   None
+#######################################
+function get_bucket_path () {
     while [ -z "${BUCKETPATH}" ]
     do
         echo "Enter the path of S3 bucket without / in last"
         read BUCKETPATH
     done
+    check_bucket_path_existance
 }
 
 #######################################
@@ -100,6 +146,7 @@ function main (){
     echo "This script will check files only in current directory"
     echo ${dashLine}
     get_bucket_name
+    get_bucket_path
     check_file_status
 }
 
